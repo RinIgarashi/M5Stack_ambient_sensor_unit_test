@@ -11,3 +11,5 @@ M5Stack の環境センサユニットを Seeed Studio XIAO で使用するた�
 
 ## 確認済みマイコン
 * Seeed Studio XIAO ESP32C3
+* Seeed Studio XIAO ESP32S3
+* Seeed Studio XIAO ESP32C6
