@@ -1,113 +1,56 @@
 #include <Arduino.h>
-#include <bsec2.h>
+// #include <Wire.h>
+// #include <SPI.h>
+// #include <Adafruit_Sensor.h>
+#include <Adafruit_BME680.h>
 
-/**
- * @brief : This function checks the BSEC status, prints the respective error
- * code. Halts in case of error
- * @param[in] bsec  : Bsec2 class object
- */
-void checkBsecStatus(Bsec2 bsec);
+// #define BME_SCK 13
+// #define BME_MISO 12
+// #define BME_MOSI 11
+// #define BME_CS 10
 
-/**
- * @brief : This function is called by the BSEC library when a new output is
- * available
- * @param[in] input     : BME68X sensor data before processing
- * @param[in] outputs   : Processed BSEC BSEC output data
- * @param[in] bsec      : Instance of BSEC2 calling the callback
- */
-void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec);
+#define SEALEVELPRESSURE_HPA (1013.25)
 
-/* Create an object of the class Bsec2 */
-Bsec2 envSensor;
+// Adafruit_BME680 bme(&Wire); // I2C
+Adafruit_BME680 bme;  // I2C
+// Adafruit_BME680 bme(&Wire1); // example of I2C on another bus
+// Adafruit_BME680 bme(BME_CS); // hardware SPI
+// Adafruit_BME680 bme(BME_CS, BME_MOSI, BME_MISO,  BME_SCK);
 
-/* Entry point for the example */
-void setup(void) {
-  /* Desired subscription list of BSEC2 outputs */
-  bsecSensor sensorList[] = {BSEC_OUTPUT_IAQ,     BSEC_OUTPUT_RAW_TEMPERATURE,      BSEC_OUTPUT_RAW_PRESSURE, BSEC_OUTPUT_RAW_HUMIDITY,
-                             BSEC_OUTPUT_RAW_GAS, BSEC_OUTPUT_STABILIZATION_STATUS, BSEC_OUTPUT_RUN_IN_STATUS};
-
-  /* Initialize the communication interfaces */
+void setup() {
   Serial.begin(115200);
-  Wire.begin(SDA, SCL);
+  while (!Serial);
+  Serial.printf("BME680 test\n");
 
-  /* Valid for boards with USB-COM. Wait until the port is open */
-  while (!Serial) delay(10);
-
-  /* Initialize the library and interfaces */
-  if (!envSensor.begin(BME68X_I2C_ADDR_HIGH, Wire)) {
-    checkBsecStatus(envSensor);
+  if (!bme.begin()) {
+    Serial.printf("Could not find a valid BME680 sensor, check wiring!\n");
+    while (1);
   }
 
-  /* Subsribe to the desired BSEC2 outputs */
-  if (!envSensor.updateSubscription(sensorList, ARRAY_LEN(sensorList), BSEC_SAMPLE_RATE_LP)) {
-    checkBsecStatus(envSensor);
-  }
-
-  /* Whenever new data is available call the newDataCallback function */
-  envSensor.attachCallback(newDataCallback);
-
-  Serial.printf("BSEC library version %d.%d.%d.%d\n", envSensor.version.major, envSensor.version.minor, envSensor.version.major_bugfix, envSensor.version.minor_bugfix);
+  // Set up oversampling and filter initialization
+  bme.setTemperatureOversampling(BME680_OS_8X);
+  bme.setHumidityOversampling(BME680_OS_2X);
+  bme.setPressureOversampling(BME680_OS_4X);
+  bme.setIIRFilterSize(BME680_FILTER_SIZE_3);
+  bme.setGasHeater(320, 150);  // 320*C for 150 ms
 }
 
-/* Function that is looped forever */
-void loop(void) {
-  /* Call the run function often so that the library can
-   * check if it is time to read new data from the sensor
-   * and process it.
-   */
-  if (!envSensor.run()) {
-    checkBsecStatus(envSensor);
-  }
-}
+float sampling_rate_Hz = 0.1;
 
-void newDataCallback(const bme68xData data, const bsecOutputs outputs, Bsec2 bsec) {
-  if (!outputs.nOutputs) {
-    return;
-  }
+uint32_t prev_millis = 0;
 
-  Serial.printf("\ntimestamp = %lld\n", outputs.output[0].time_stamp / INT64_C(1000000));
-  for (uint8_t i = 0; i < outputs.nOutputs; i++) {
-    const bsecData output = outputs.output[i];
-    switch (output.sensor_id) {
-      case BSEC_OUTPUT_IAQ:
-        Serial.printf("irq = %.1f\n", output.signal);
-        Serial.printf("iaq accuracy = %d\n", output.accuracy);
-        break;
-      case BSEC_OUTPUT_RAW_TEMPERATURE:
-        Serial.printf("temperature = %.2f\n", output.signal);
-        break;
-      case BSEC_OUTPUT_RAW_PRESSURE:
-        Serial.printf("pressure = %.1f\n", output.signal);
-        break;
-      case BSEC_OUTPUT_RAW_HUMIDITY:
-        Serial.printf("humidity = %.2f\n", output.signal);
-        break;
-      case BSEC_OUTPUT_RAW_GAS:
-        Serial.printf("gas resistance = %.1f\n", output.signal);
-        break;
-      case BSEC_OUTPUT_STABILIZATION_STATUS:
-        Serial.printf("stabilization status = %.1f\n", output.signal);
-        break;
-      case BSEC_OUTPUT_RUN_IN_STATUS:
-        Serial.printf("run in status = %.1f\n", output.signal);
-        break;
-      default:
-        break;
+void loop() {
+  if ((millis() - prev_millis) >= (1000 / sampling_rate_Hz)) {
+    prev_millis = millis();
+
+    if (!bme.performReading()) {
+      Serial.printf("Failed to perform reading\n");
+      return;
     }
-  }
-}
 
-void checkBsecStatus(Bsec2 bsec) {
-  if (bsec.status < BSEC_OK) {
-    Serial.printf("BSEC error code : %d\n", bsec.status);
-
-  } else if (bsec.status > BSEC_OK) {
-    Serial.printf("BSEC warning code : %d\n", bsec.status);
-  }
-
-  if (bsec.sensor.status < BME68X_OK) {
-    Serial.printf("BME68X error code : %d\n", bsec.sensor.status);
-  } else if (bsec.sensor.status > BME68X_OK) {
-    Serial.printf("BME68X warning code : %d\n", bsec.sensor.status);
+    Serial.printf("temp:%.2f\t", bme.temperature);
+    Serial.printf("humidity:%.2f\t", bme.humidity);
+    Serial.printf("pressure:%d\t", bme.pressure);
+    Serial.printf("gas:%d\n", bme.gas_resistance);
   }
 }

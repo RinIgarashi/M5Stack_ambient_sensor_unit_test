@@ -1,32 +1,37 @@
+#include <Adafruit_BMP280.h>
+#include <Adafruit_SHT4x.h>
 #include <Arduino.h>
-#include <BMP280.h>
-#include <SHT4X.h>
 
-SHT4X sht4x;
-BMP280 bmp;
+Adafruit_BMP280 bmp;
+Adafruit_SHT4x sht4;
 
 void setup() {
   Serial.begin(115200);
 
-  if (!sht4x.begin(&Wire, SHT40_I2C_ADDR_44, SDA, SCL, 400000U)) {
-    Serial.println("Couldn't find SHT4x");
+  // Wire.begin(SDA, SCL);
+
+  // -------- search for SHT4x --------
+  if (!sht4.begin()) {
+    Serial.printf("Couldn't find SHT4x\n");
     while (1) delay(1);
   }
-
   // You can have 3 different precisions, higher precision takes longer
-  sht4x.setPrecision(SHT4X_HIGH_PRECISION);
-  sht4x.setHeater(SHT4X_NO_HEATER);
+  sht4.setPrecision(SHT4X_HIGH_PRECISION);
+  sht4.setHeater(SHT4X_NO_HEATER);
 
-  if (!bmp.begin(&Wire, BMP280_I2C_ADDR, SDA, SCL, 400000U)) {
-    Serial.println("Couldn't find BMP280");
+  // -------- search for BMP280 --------
+  if (!bmp.begin(BMP280_ADDRESS_ALT)) {
+    Serial.printf(
+        "Could not find a valid BMP280 sensor, check wiring or "
+        "try a different address!\n");
     while (1) delay(1);
   }
   /* Default settings from datasheet. */
-  bmp.setSampling(BMP280::MODE_NORMAL,     /* Operating Mode. */
-                  BMP280::SAMPLING_X2,     /* Temp. oversampling */
-                  BMP280::SAMPLING_X16,    /* Pressure oversampling */
-                  BMP280::FILTER_X16,      /* Filtering. */
-                  BMP280::STANDBY_MS_500); /* Standby time. */
+  bmp.setSampling(Adafruit_BMP280::MODE_FORCED,     /* Operating Mode. */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering. */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time. */
 }
 
 uint8_t sampling_rate_Hz = 2;
@@ -36,12 +41,19 @@ uint32_t prev_millis = 0;
 void loop() {
   if ((millis() - prev_millis) >= (1000 / sampling_rate_Hz)) {
     prev_millis = millis();
-    // Serial.println() is done in sht4x.update()
-    if (sht4x.update() && bmp.update()) {
-      Serial.printf("[sht4x] temp:%.2f, hum:%.2f\t", sht4x.cTemp, sht4x.humidity);
-      Serial.printf("[bmp280] temp:%.2f, pressure:%.2f", bmp.cTemp, bmp.pressure);
+
+    sensors_event_t humidity, temp;
+    sht4.getEvent(&humidity, &temp);  // populate temp and humidity objects with fresh data
+    Serial.printf("[sht4x] temp:%.2f, hum:%.2f\t", temp.temperature, humidity.relative_humidity);
+
+    // must call this to wake sensor up and get new measurement data
+    // it blocks until measurement is complete
+    if (bmp.takeForcedMeasurement()) {
+      Serial.printf("[bmp280] temp:%.2f, pressure:%.2f", bmp.readPressure(), bmp.readTemperature());
     } else {
-      Serial.printf("Couldn't read sensor data");
+      Serial.printf("Forced measurement failed!");
     }
+
+    Serial.printf("\n");
   }
 }
