@@ -1,5 +1,5 @@
 # M5Stack_ambient_sensor_unit_test
-M5Stack の環境センサユニットを Seeed Studio XIAO で使用するための動作確認<br>
+M5Stack の環境センサユニットを [Seeed Studio XIAO](https://www.seeedstudio.com/xiao-series-page) で使用するための動作確認<br>
 ライブラリ付属のサンプルコードをもとに作成<br>
 
 ## 確認済みセンサ
@@ -10,6 +10,6 @@ M5Stack の環境センサユニットを Seeed Studio XIAO で使用するた�
 * M5Stack TMOS PIR Unit
 
 ## 確認済みマイコン
-* Seeed Studio XIAO ESP32C3
-* Seeed Studio XIAO ESP32S3
-* Seeed Studio XIAO ESP32C6
+* [Seeed Studio XIAO ESP32C3](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html)
+* [Seeed Studio XIAO ESP32S3](https://www.seeedstudio.com/XIAO-ESP32S3-p-5627.html)
+* [Seeed Studio XIAO ESP32C6](https://www.seeedstudio.com/Seeed-Studio-XIAO-ESP32C6-p-5884.html)
