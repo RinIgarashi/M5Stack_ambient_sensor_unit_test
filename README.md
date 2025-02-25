@@ -3,11 +3,11 @@ M5Stack の環境センサユニットを [Seeed Studio XIAO](https://www.seeeds
 ライブラリ付属のサンプルコードをもとに作成<br>
 
 ## 確認済みセンサ
-* M5Stack DLight Unit
-* M5Stack ENV Ⅲ Unit
-* M5Stack ENV Ⅳ Unit
-* M5Stack ENV Pro Unit
-* M5Stack TMOS PIR Unit
+* [M5Stack DLight Unit](https://docs.m5stack.com/en/unit/DLight%20Unit)
+* [M5Stack ENV Ⅲ Unit](https://docs.m5stack.com/en/unit/envIII)
+* [M5Stack ENV Ⅳ Unit](https://docs.m5stack.com/en/unit/ENV%E2%85%A3%20Unit)
+* [M5Stack ENV Pro Unit](https://docs.m5stack.com/en/unit/ENV%20Pro%20Unit)
+* [M5Stack TMOS PIR Unit](https://docs.m5stack.com/en/unit/UNIT-TMOS%20PIR)
 
 ## 確認済みマイコン
 * [Seeed Studio XIAO ESP32C3](https://www.seeedstudio.com/Seeed-XIAO-ESP32C3-p-5431.html)
